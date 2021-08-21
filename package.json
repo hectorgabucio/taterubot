@@ -1,0 +1,20 @@
+{
+	"name": "taterubot",
+	"version": "1.0.0",
+	"description": "A bot that lets you record and send audios to your friends just like Telegram or Whatsapp",
+	"main": "index.js",
+	"scripts": {
+		"start": "node index.js"
+	},
+	"keywords": [],
+	"author": "Hector Gabucio",
+	"license": "MIT",
+	"engines": {
+		"node": ">=12.0.0"
+	},
+	"dependencies": {
+		"@discordjs/opus": "^0.3.2",
+		"discord.js": "^12.3.1",
+		"ffmpeg-static": "^4.2.7"
+	}
+}
