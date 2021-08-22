@@ -1,17 +1,18 @@
-const Discord = require('discord.js');
+import Discord, { TextChannel } from 'discord.js';
 const client = new Discord.Client();
 
-const config = require('./config.json');
-const commands = require(`./bin/commands`);
+const config = require('../config.json');
+import { enter, exit } from './commands';
+
 
 const POOL = 2
 const CHANNEL_PREFIX = 'TATERU-'
 
 
 
-const MAP = {}
+const MAP:Record<string, any> = {}
 
-const USER_RECORDING = {}
+const USER_RECORDING:Record<string, string|undefined> = {}
 
 client.login(config.BOT_TOKEN);
 
@@ -35,7 +36,7 @@ client.on('ready', async () => {
 
 client.on('voiceStateUpdate', (oldMember, newMember) => {
 
-    if (oldMember.member.user.bot || newMember.member.user.bot) {
+    if (oldMember?.member?.user?.bot || newMember?.member?.user?.bot) {
         console.log('fucking bot...')
         return
     }
@@ -46,24 +47,24 @@ client.on('voiceStateUpdate', (oldMember, newMember) => {
 
 
     if (newMember.channel === null) {
-        if (oldMember.channel.name.startsWith(CHANNEL_PREFIX)) {
-            if (USER_RECORDING[guildNew] === oldMember.member.id) {
+        if (oldMember?.channel?.name.startsWith(CHANNEL_PREFIX)) {
+            if (USER_RECORDING[guildNew] === oldMember?.member?.id) {
                 console.log('stop recording biatch')
                 const channel =  guildObj.channels.cache.find(x => x.type === 'text')
-                commands.exit(guildObj.voice,channel)
+                guildObj.voice && channel && exit(guildObj.voice,(channel as TextChannel))
 
 
-                USER_RECORDING[guildNew] = null
+                USER_RECORDING[guildNew] = undefined
             }
-            console.log(USER_RECORDING[guildNew],oldMember.member.user.id)
+            console.log(USER_RECORDING[guildNew],oldMember?.member?.user.id)
         }
         console.log('leaving wtf')
         return
     }
 
     if (newMember.channel.name.startsWith(CHANNEL_PREFIX)) {
-        USER_RECORDING[guildNew] = newMember.member.user.id
-        commands.enter(guildNew, newMember.member.user.username,newMember.channel)
+        USER_RECORDING[guildNew] = newMember?.member?.user.id
+        enter(guildNew, newMember?.member?.user?.username ?? 'pepoclown',newMember.channel)
     }
 
  });

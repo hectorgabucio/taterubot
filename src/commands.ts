@@ -1,17 +1,18 @@
-const fs = require('fs');
-const { spawn } = require('child_process');
-const { promisify } = require('util');
+import fs from 'fs';
+import { spawn } from 'child_process';
+import { promisify } from 'util';
+import { DiscordAPIError, GuildChannel, TextChannel, VoiceState } from 'discord.js';
 
-const createNewChunk = (SessionID) => {
+const createNewChunk = (SessionID:string) => {
     const pathToFile = __dirname + `/../recordings/${SessionID}/${Date.now()}.pcm`;
     return fs.createWriteStream(pathToFile);
 };
 
 
 const mkdir = promisify(fs.mkdir)
-let voiceSessionMap = [];
-let activeGuildRecorders = [];
-exports.enter = async function(guildId, authorName, voiceChannel) {
+let voiceSessionMap: Record<string|number, any> = {}
+let activeGuildRecorders: Record<string, boolean> = {}
+export const enter = async function(guildId: string | number, authorName: string, voiceChannel: { name: any; join: () => Promise<any>; id: string | number; guild: { name: any; }; }) {
     if (typeof(activeGuildRecorders[guildId]) === "undefined") {
         const start = process.hrtime()
 
@@ -41,7 +42,7 @@ exports.enter = async function(guildId, authorName, voiceChannel) {
                 recordStart: deltaStart
             };
             const receiver = conn.receiver;
-            conn.on('speaking', (user, speaking) => {
+            conn.on('speaking', (user: { username: any; }, speaking: any) => {
                 if (speaking) {
                     let delta = Date.now() - deltaStart;
                     /*
@@ -80,12 +81,14 @@ exports.enter = async function(guildId, authorName, voiceChannel) {
     }
     
 }
-
-exports.exit = function (voice, channel) {
+export const exit = function (voice: VoiceState, channel: TextChannel) {
     // Use optional chaining when we upgrade to Node 14.
 
             
             const { channel: voiceChannel, connection: conn } = voice;
+            if (!voiceChannel || !conn) {
+                throw new Error ('wtf no voice channel or conn')
+            }
             const resolveSessionId = voiceSessionMap[voiceChannel.id].voiceSid;
             const dispatcher = conn.play(__dirname + "/../sounds/badumtss.mp3", { volume: 0.45 });
             dispatcher.on("finish", () => {
