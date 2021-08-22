@@ -1,5 +1,5 @@
 import { spawn } from 'child_process';
-import { TextChannel, VoiceState } from 'discord.js';
+import { TextChannel, VoiceChannel, VoiceState } from 'discord.js';
 import fs from 'fs';
 import { promisify } from 'util';
 
@@ -8,19 +8,24 @@ const createNewChunk = (SessionID: string) => {
   return fs.createWriteStream(pathToFile);
 };
 
+interface VoiceSession {
+  voiceSid: string;
+  activityLog: Record<string, unknown>[];
+  guildId: string | number;
+  guildName: string;
+  recordInitiator: string;
+  vcName: string;
+  recordStart: number;
+}
+
 const mkdir = promisify(fs.mkdir);
-const voiceSessionMap: Record<string | number, any> = {};
+const voiceSessionMap: Record<string | number, VoiceSession> = {};
 const activeGuildRecorders: Record<string, boolean> = {};
 export const enter = async function (
   guildId: string | number,
   authorName: string,
-  voiceChannel: {
-    name: any;
-    join: () => Promise<any>;
-    id: string | number;
-    guild: { name: any };
-  },
-) {
+  voiceChannel: VoiceChannel,
+): Promise<void> {
   if (typeof activeGuildRecorders[guildId] === 'undefined') {
     const start = process.hrtime();
 
@@ -53,7 +58,7 @@ export const enter = async function (
           recordStart: deltaStart,
         };
         const receiver = conn.receiver;
-        conn.on('speaking', (user: { username: any }, speaking: any) => {
+        conn.on('speaking', (user, speaking) => {
           if (speaking) {
             const delta = Date.now() - deltaStart;
             /*
@@ -91,7 +96,7 @@ export const enter = async function (
     console.log('An active recording session exists in the current guild.');
   }
 };
-export const exit = function (voice: VoiceState, channel: TextChannel) {
+export const exit = function (voice: VoiceState, channel: TextChannel): void {
   // Use optional chaining when we upgrade to Node 14.
 
   const { channel: voiceChannel, connection: conn } = voice;

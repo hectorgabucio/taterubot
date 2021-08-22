@@ -1,6 +1,7 @@
 import Discord, { TextChannel } from 'discord.js';
 const client = new Discord.Client();
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const config = require('../config.json');
 import { enter, exit } from './commands';
 
