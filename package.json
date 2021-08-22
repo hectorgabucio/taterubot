@@ -4,8 +4,10 @@
 	"description": "A bot that lets you record and send audios to your friends just like Telegram or Whatsapp",
 	"main": "index.js",
 	"scripts": {
-		"start:dev": "ts-node-dev ./src/index.ts",
-    	"start": "tsc && node ./dist/index.js"
+		"dev": "ts-node-dev ./src/index.ts",
+		"build": "tsc",
+		"prestart": "npm run build",
+    	"start": "node ./dist/index.js"
 	},
 	"keywords": [],
 	"author": "Hector Gabucio",
