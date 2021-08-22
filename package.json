@@ -1,28 +1,34 @@
 {
-	"name": "taterubot",
-	"version": "1.0.0",
-	"description": "A bot that lets you record and send audios to your friends just like Telegram or Whatsapp",
-	"main": "index.js",
-	"scripts": {
-		"dev": "ts-node-dev ./src/index.ts",
-		"build": "tsc",
-		"prestart": "npm run build",
-    	"start": "node ./dist/index.js"
-	},
-	"keywords": [],
-	"author": "Hector Gabucio",
-	"license": "MIT",
-	"engines": {
-		"node": ">=12.0.0"
-	},
-	"dependencies": {
-		"@discordjs/opus": "^0.3.2",
-		"discord.js": "^12.3.1",
-		"ffmpeg-static": "^4.2.7"
-	},
-	"devDependencies": {
-		"@types/node": "^16.7.1",
-		"ts-node-dev": "^1.1.8",
-		"typescript": "^4.3.5"
-	}
+  "name": "taterubot",
+  "version": "1.0.0",
+  "description": "A bot that lets you record and send audios to your friends just like Telegram or Whatsapp",
+  "main": "index.js",
+  "scripts": {
+    "dev": "ts-node-dev ./src/index.ts",
+    "build": "tsc",
+    "prestart": "npm run build",
+    "start": "node ./dist/index.js",
+    "lint": "eslint src/**/*.ts",
+    "format": "eslint src/**/*.ts --fix"
+  },
+  "keywords": [],
+  "author": "Hector Gabucio",
+  "license": "MIT",
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "dependencies": {
+    "@discordjs/opus": "^0.3.2",
+    "discord.js": "^12.3.1",
+    "ffmpeg-static": "^4.2.7"
+  },
+  "devDependencies": {
+    "@types/node": "^16.7.1",
+    "@typescript-eslint/eslint-plugin": "^4.29.2",
+    "@typescript-eslint/parser": "^4.29.2",
+    "eslint": "^7.32.0",
+    "prettier": "^2.3.2",
+    "ts-node-dev": "^1.1.8",
+    "typescript": "^4.3.5"
+  }
 }
