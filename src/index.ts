@@ -1,19 +1,15 @@
-require('dotenv').config()
+require('dotenv').config();
 import Discord, { TextChannel } from 'discord.js';
-const client = new Discord.Client();
-
-
 import { enter, exit } from './commands';
+const client = new Discord.Client();
 
 const POOL = 2;
 const CHANNEL_PREFIX = 'TATERU-';
 
 const MAP: Record<string, Discord.GuildChannel[]> = {};
 
-const USER_RECORDING: Record<string, string | undefined> = {};
-
 if (!process.env.BOT_TOKEN) {
-  throw new Error('have to provide BOT_TOKEN')
+  throw new Error('have to provide BOT_TOKEN');
 }
 
 client.login(process.env.BOT_TOKEN);
@@ -41,25 +37,33 @@ client.on('voiceStateUpdate', async (oldMember, newMember) => {
     return;
   }
 
-  const guildNew = newMember.guild.id;
-  const guildObj = newMember.guild;
-
-  console.log(oldMember.channelID, newMember.channelID)
-
-  if (newMember.channel === null) {
-    if (oldMember?.channel?.name.startsWith(CHANNEL_PREFIX)) {
-      if (USER_RECORDING[guildNew] === oldMember?.member?.id) {
-        const channel = guildObj.channels.cache.find((x) => x.type === 'text');
-        guildObj.voice && channel && await exit(guildObj.voice, channel as TextChannel);
-
-        USER_RECORDING[guildNew] = undefined;
-      }
-    }
+  const tateruChannelsInvolved =
+    (newMember?.channel?.name ?? '').startsWith(CHANNEL_PREFIX) ||
+    (oldMember?.channel?.name ?? '').startsWith(CHANNEL_PREFIX);
+  if (!tateruChannelsInvolved) {
     return;
   }
 
-  if (newMember.channel.name.startsWith(CHANNEL_PREFIX)) {
-    USER_RECORDING[guildNew] = newMember?.member?.user.id;
-    await enter(guildNew, newMember?.member?.user?.username ?? 'pepoclown', newMember.channel);
+  const guildNew = newMember.guild.id;
+  const guildObj = newMember.guild;
+
+  console.log(oldMember.channelID, newMember.channelID);
+
+  const newUserChannel = newMember.channelID;
+  const oldUserChannel = oldMember.channelID;
+
+  if (!oldUserChannel && newUserChannel) {
+    // User Joins a voice channel
+    if (newMember?.channel?.name.startsWith(CHANNEL_PREFIX)) {
+      await enter(guildNew, newMember?.member?.user?.username ?? 'pepoclown', newMember.channel);
+    }
+  } else if (!newUserChannel) {
+    // User leaves a voice channel
+    if (oldMember?.channel?.name.startsWith(CHANNEL_PREFIX)) {
+      const channel = guildObj.channels.cache.find((x) => x.type === 'text');
+      guildObj.voice && channel && (await exit(guildObj.voice, channel as TextChannel));
+    }
+  } else {
+    // user switches to/from tateru channel
   }
 });
