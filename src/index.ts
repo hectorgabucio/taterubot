@@ -1,8 +1,8 @@
+require('dotenv').config()
 import Discord, { TextChannel } from 'discord.js';
 const client = new Discord.Client();
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const config = require('../config.json');
+
 import { enter, exit } from './commands';
 
 const POOL = 2;
@@ -12,7 +12,11 @@ const MAP: Record<string, Discord.GuildChannel[]> = {};
 
 const USER_RECORDING: Record<string, string | undefined> = {};
 
-client.login(config.BOT_TOKEN);
+if (!process.env.BOT_TOKEN) {
+  throw new Error('have to provide BOT_TOKEN')
+}
+
+client.login(process.env.BOT_TOKEN);
 
 client.on('ready', async () => {
   console.log(`\nONLINE\n`);
@@ -34,12 +38,13 @@ client.on('ready', async () => {
 
 client.on('voiceStateUpdate', async (oldMember, newMember) => {
   if (oldMember?.member?.user?.bot || newMember?.member?.user?.bot) {
-    console.log('fucking bot...');
     return;
   }
 
   const guildNew = newMember.guild.id;
   const guildObj = newMember.guild;
+
+  console.log(oldMember.channelID, newMember.channelID)
 
   if (newMember.channel === null) {
     if (oldMember?.channel?.name.startsWith(CHANNEL_PREFIX)) {
@@ -49,7 +54,6 @@ client.on('voiceStateUpdate', async (oldMember, newMember) => {
 
         USER_RECORDING[guildNew] = undefined;
       }
-      console.log(USER_RECORDING[guildNew], oldMember?.member?.user.id);
     }
     return;
   }

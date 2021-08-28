@@ -32,7 +32,6 @@ function doFfmpegTask(recId: string): Promise<void> {
       .inputOptions('-f', 's16le', '-ar', '48000', '-ac', '2')
       .output(`${__dirname}/../recordings/${recId}/${recId}.mp3`)
       .on('end', function () {
-        console.log('Finished processing for ' + recId);
         resolve();
       });
 

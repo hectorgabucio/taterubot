@@ -39,8 +39,6 @@ export const enter = async function (
 
     await mkdir(__dirname + `/../recordings/${voiceSid}/`, { recursive: true });
 
-    console.log(`Sliding into ${voiceChannel.name} ..., last`, process.hrtime(start));
-
     try {
       const conn = await voiceChannel.join();
 
@@ -50,7 +48,6 @@ export const enter = async function (
 
       await pEvent(dispatcher, 'finish');
 
-      console.log('after dispatcher, last', process.hrtime(start));
 
       console.log(`Joined ${voiceChannel.name}!\n\nREADY TO RECORD\n`);
 
@@ -115,7 +112,6 @@ export const exit = async function (voice: VoiceState, channel: TextChannel): Pr
   const data = JSON.stringify(voiceSessionMap[voiceChannel.id]);
   await writeF(__dirname + `/../recordings/${resolveSessionId}.json`, data, 'utf8');
 
-  console.log('written stats json', __dirname + `/../recordings/${resolveSessionId}.json`);
 
   await processRecording(resolveSessionId);
   const path = `./recordings/${resolveSessionId}/${resolveSessionId}.mp3`;
