@@ -8,6 +8,9 @@ const CHANNEL_PREFIX = 'TATERU-';
 
 const MAP: Record<string, Discord.GuildChannel[]> = {};
 
+
+const activeGuildRecorders: Record<string, boolean> = {};
+
 if (!process.env.BOT_TOKEN) {
   throw new Error('have to provide BOT_TOKEN');
 }
@@ -54,13 +57,16 @@ client.on('voiceStateUpdate', async (oldMember, newMember) => {
 
   if (!oldUserChannel && newUserChannel) {
     // User Joins a voice channel
-    if (newMember?.channel?.name.startsWith(CHANNEL_PREFIX)) {
+    if (newMember?.channel?.name.startsWith(CHANNEL_PREFIX) && !activeGuildRecorders[guildNew]) {
+      activeGuildRecorders[guildNew] = true;
       await enter(guildNew, newMember?.member?.user?.username ?? 'pepoclown', newMember.channel);
     }
   } else if (!newUserChannel) {
     // User leaves a voice channel
     if (oldMember?.channel?.name.startsWith(CHANNEL_PREFIX)) {
       const channel = guildObj.channels.cache.find((x) => x.type === 'text');
+
+      activeGuildRecorders[oldMember.guild.id] = false;
       guildObj.voice && channel && (await exit(guildObj.voice, channel as TextChannel));
     }
   } else {
