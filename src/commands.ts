@@ -2,6 +2,7 @@ import { TextChannel, VoiceChannel, VoiceState } from 'discord.js';
 import fs, { writeFile } from 'fs';
 import { promisify } from 'util';
 import { processRecording } from './merge';
+import pEvent from 'p-event';
 
 const writeF = promisify(writeFile);
 
@@ -46,56 +47,53 @@ export const enter = async function (
       console.log('inside conn, last', process.hrtime(start));
       const deltaStart = Date.now();
       const dispatcher = conn.play(__dirname + '/../sounds/taterubot-start-recording.mp3');
+
+      await pEvent(dispatcher, 'finish');
+
       console.log('after dispatcher, last', process.hrtime(start));
 
-      let botListening = false;
-      dispatcher.on('finish', () => {
-        console.log(`Joined ${voiceChannel.name}!\n\nREADY TO RECORD\n`);
-        botListening = true;
+      console.log(`Joined ${voiceChannel.name}!\n\nREADY TO RECORD\n`);
 
-        voiceSessionMap[voiceChannel.id] = {
-          voiceSid: voiceSid,
-          activityLog: [],
-          guildId: currentGuildId,
-          guildName: voiceChannel.guild.name,
-          recordInitiator: authorName,
-          vcName: voiceChannel.name,
-          recordStart: deltaStart,
-        };
-        const receiver = conn.receiver;
+      voiceSessionMap[voiceChannel.id] = {
+        voiceSid: voiceSid,
+        activityLog: [],
+        guildId: currentGuildId,
+        guildName: voiceChannel.guild.name,
+        recordInitiator: authorName,
+        vcName: voiceChannel.name,
+        recordStart: deltaStart,
+      };
+      const receiver = conn.receiver;
 
-        conn.on('speaking', (user, speaking) => {
-          if (!botListening) {
-            return;
-          }
-          if (speaking) {
-            const delta = Date.now() - deltaStart;
-            /*
+      conn.on('speaking', (user, speaking) => {
+        if (speaking) {
+          const delta = Date.now() - deltaStart;
+          /*
                             e: EventType
                                 "s": Speak start
                                 "e": Speak end
                             s: Username
                             d: Delta from 
                         */
+          voiceSessionMap[voiceChannel.id].activityLog.push({
+            e: 's',
+            s: user.username,
+            d: delta,
+          });
+          console.log(`${user.username} started speaking`);
+          const audioStream = receiver.createStream(user, { mode: 'pcm' });
+          audioStream.pipe(createNewChunk(voiceSid));
+          
+          audioStream.on('end', () => {
+            const deltaEnd = Date.now() - deltaStart;
+            console.log(`${user.username} stopped speaking`);
             voiceSessionMap[voiceChannel.id].activityLog.push({
-              e: 's',
+              e: 'e',
               s: user.username,
-              d: delta,
+              d: deltaEnd,
             });
-            console.log(`${user.username} started speaking`);
-            const audioStream = receiver.createStream(user, { mode: 'pcm' });
-            audioStream.pipe(createNewChunk(voiceSid));
-            audioStream.on('end', () => {
-              const deltaEnd = Date.now() - deltaStart;
-              console.log(`${user.username} stopped speaking`);
-              voiceSessionMap[voiceChannel.id].activityLog.push({
-                e: 'e',
-                s: user.username,
-                d: deltaEnd,
-              });
-            });
-          }
-        });
+          });
+        }
       });
     } catch (err) {
       console.log(err);
