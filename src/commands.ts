@@ -73,7 +73,7 @@ export const enter = async function (
           e: 's',
           s: user.username,
           d: delta,
-        });
+        }); 
         console.log(`${user.username} started speaking`);
         const audioStream = receiver.createStream(user, { mode: 'pcm' });
         audioStream.pipe(createNewChunk(voiceSid));
