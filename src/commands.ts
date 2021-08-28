@@ -2,6 +2,7 @@ import { spawn } from 'child_process';
 import { TextChannel, VoiceChannel, VoiceState } from 'discord.js';
 import fs from 'fs';
 import { promisify } from 'util';
+import { processRecording } from './merge';
 
 
 
@@ -111,17 +112,28 @@ export const exit = function (voice: VoiceState, channel: TextChannel): void {
   });
   dispatcher.on('finish', () => {
     const data = JSON.stringify(voiceSessionMap[voiceChannel.id]);
-    fs.writeFile(__dirname + `/../recordings/${resolveSessionId}.json`, data, 'utf8', (err) => {
+    fs.writeFile(__dirname + `/../recordings/${resolveSessionId}.json`, data, 'utf8', async (err) => {
       if (err) {
         return console.log(err);
       }
 
       console.log('written stats json', __dirname + `/../recordings/${resolveSessionId}.json`);
+
+
+
+      await processRecording(resolveSessionId)
+      const path = `./recordings/${resolveSessionId}/${resolveSessionId}.mp3`;
+      await channel.send({
+        files: [path],
+      });
+      fs.rm(`./recordings/${resolveSessionId}`,{recursive: true, force: true}, () => ({}))
+
+
+      /*
       const nodeArgs = [__dirname + '/../bin/merge.js', resolveSessionId];
       const transcoderChild = spawn('node', nodeArgs);
       transcoderChild.stdout.setEncoding('utf8');
       transcoderChild.stdout.on('data', function (data) {
-        //Here is where the output goes
 
         console.log('transcoder stdout ' + data);
 
@@ -138,6 +150,14 @@ export const exit = function (voice: VoiceState, channel: TextChannel): void {
           fs.rm(`./recordings/${resolveSessionId}`,{recursive: true, force: true}, () => ({}))
         }
       });
+*/
+
+
+
+
+
+
+
     });
     console.log('Destroying guild lock for', voiceSessionMap[voiceChannel.id].guildId);
     delete activeGuildRecorders[voiceSessionMap[voiceChannel.id].guildId];
