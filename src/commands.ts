@@ -3,6 +3,8 @@ import { TextChannel, VoiceChannel, VoiceState } from 'discord.js';
 import fs from 'fs';
 import { promisify } from 'util';
 
+
+
 const createNewChunk = (SessionID: string) => {
   const pathToFile = __dirname + `/../recordings/${SessionID}/${Date.now()}.pcm`;
   return fs.createWriteStream(pathToFile);
@@ -125,14 +127,15 @@ export const exit = function (voice: VoiceState, channel: TextChannel): void {
 
         data = data.toString();
       });
-      transcoderChild.on('exit', function (code, signal) {
+      transcoderChild.on('exit', async function (code, signal) {
         console.log('Transcoder process exited with ' + `code ${code} and signal ${signal}`);
 
         if (code === 0) {
           const path = `./recordings/${resolveSessionId}/${resolveSessionId}.mp3`;
-          channel.send({
+          await channel.send({
             files: [path],
           });
+          fs.rm(`./recordings/${resolveSessionId}`,{recursive: true, force: true}, () => ({}))
         }
       });
     });
