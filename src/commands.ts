@@ -1,9 +1,9 @@
-import { spawn } from 'child_process';
 import { TextChannel, VoiceChannel, VoiceState } from 'discord.js';
-import fs from 'fs';
+import fs, { writeFile } from 'fs';
 import { promisify } from 'util';
 import { processRecording } from './merge';
 
+const writeF = promisify(writeFile);
 
 
 const createNewChunk = (SessionID: string) => {
@@ -61,6 +61,7 @@ export const enter = async function (
           recordStart: deltaStart,
         };
         const receiver = conn.receiver;
+
         conn.on('speaking', (user, speaking) => {
           if (speaking) {
             const delta = Date.now() - deltaStart;
@@ -99,7 +100,7 @@ export const enter = async function (
     console.log('An active recording session exists in the current guild.');
   }
 };
-export const exit = function (voice: VoiceState, channel: TextChannel): void {
+export const exit = async function (voice: VoiceState, channel: TextChannel): Promise<void> {
   // Use optional chaining when we upgrade to Node 14.
 
   const { channel: voiceChannel, connection: conn } = voice;
@@ -107,62 +108,22 @@ export const exit = function (voice: VoiceState, channel: TextChannel): void {
     throw new Error('wtf no voice channel or conn');
   }
   const resolveSessionId = voiceSessionMap[voiceChannel.id].voiceSid;
-  const dispatcher = conn.play(__dirname + '/../sounds/badumtss.mp3', {
-    volume: 0.45,
+
+  const data = JSON.stringify(voiceSessionMap[voiceChannel.id]);
+  await writeF(__dirname + `/../recordings/${resolveSessionId}.json`, data, 'utf8');
+
+  console.log('written stats json', __dirname + `/../recordings/${resolveSessionId}.json`);
+
+  await processRecording(resolveSessionId);
+  const path = `./recordings/${resolveSessionId}/${resolveSessionId}.mp3`;
+  await channel.send({
+    files: [path],
   });
-  dispatcher.on('finish', () => {
-    const data = JSON.stringify(voiceSessionMap[voiceChannel.id]);
-    fs.writeFile(__dirname + `/../recordings/${resolveSessionId}.json`, data, 'utf8', async (err) => {
-      if (err) {
-        return console.log(err);
-      }
+  fs.rm(`./recordings/${resolveSessionId}`, { recursive: true, force: true }, () => ({}));
 
-      console.log('written stats json', __dirname + `/../recordings/${resolveSessionId}.json`);
-
-
-
-      await processRecording(resolveSessionId)
-      const path = `./recordings/${resolveSessionId}/${resolveSessionId}.mp3`;
-      await channel.send({
-        files: [path],
-      });
-      fs.rm(`./recordings/${resolveSessionId}`,{recursive: true, force: true}, () => ({}))
-
-
-      /*
-      const nodeArgs = [__dirname + '/../bin/merge.js', resolveSessionId];
-      const transcoderChild = spawn('node', nodeArgs);
-      transcoderChild.stdout.setEncoding('utf8');
-      transcoderChild.stdout.on('data', function (data) {
-
-        console.log('transcoder stdout ' + data);
-
-        data = data.toString();
-      });
-      transcoderChild.on('exit', async function (code, signal) {
-        console.log('Transcoder process exited with ' + `code ${code} and signal ${signal}`);
-
-        if (code === 0) {
-          const path = `./recordings/${resolveSessionId}/${resolveSessionId}.mp3`;
-          await channel.send({
-            files: [path],
-          });
-          fs.rm(`./recordings/${resolveSessionId}`,{recursive: true, force: true}, () => ({}))
-        }
-      });
-*/
-
-
-
-
-
-
-
-    });
-    console.log('Destroying guild lock for', voiceSessionMap[voiceChannel.id].guildId);
-    delete activeGuildRecorders[voiceSessionMap[voiceChannel.id].guildId];
-    delete voiceSessionMap[voiceChannel.id];
-    voiceChannel.leave();
-    console.log(`\nSTOPPED RECORDING\n`);
-  });
+  console.log('Destroying guild lock for', voiceSessionMap[voiceChannel.id].guildId);
+  delete activeGuildRecorders[voiceSessionMap[voiceChannel.id].guildId];
+  delete voiceSessionMap[voiceChannel.id];
+  voiceChannel.leave();
+  console.log(`\nSTOPPED RECORDING\n`);
 };

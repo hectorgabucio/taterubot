@@ -32,7 +32,7 @@ client.on('ready', async () => {
   }
 });
 
-client.on('voiceStateUpdate', (oldMember, newMember) => {
+client.on('voiceStateUpdate', async (oldMember, newMember) => {
   if (oldMember?.member?.user?.bot || newMember?.member?.user?.bot) {
     console.log('fucking bot...');
     return;
@@ -44,20 +44,18 @@ client.on('voiceStateUpdate', (oldMember, newMember) => {
   if (newMember.channel === null) {
     if (oldMember?.channel?.name.startsWith(CHANNEL_PREFIX)) {
       if (USER_RECORDING[guildNew] === oldMember?.member?.id) {
-        console.log('stop recording biatch');
         const channel = guildObj.channels.cache.find((x) => x.type === 'text');
-        guildObj.voice && channel && exit(guildObj.voice, channel as TextChannel);
+        guildObj.voice && channel && await exit(guildObj.voice, channel as TextChannel);
 
         USER_RECORDING[guildNew] = undefined;
       }
       console.log(USER_RECORDING[guildNew], oldMember?.member?.user.id);
     }
-    console.log('leaving wtf');
     return;
   }
 
   if (newMember.channel.name.startsWith(CHANNEL_PREFIX)) {
     USER_RECORDING[guildNew] = newMember?.member?.user.id;
-    enter(guildNew, newMember?.member?.user?.username ?? 'pepoclown', newMember.channel);
+    await enter(guildNew, newMember?.member?.user?.username ?? 'pepoclown', newMember.channel);
   }
 });
