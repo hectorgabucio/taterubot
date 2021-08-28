@@ -5,7 +5,6 @@ import { processRecording } from './merge';
 
 const writeF = promisify(writeFile);
 
-
 const createNewChunk = (SessionID: string) => {
   const pathToFile = __dirname + `/../recordings/${SessionID}/${Date.now()}.pcm`;
   return fs.createWriteStream(pathToFile);
@@ -41,16 +40,19 @@ export const enter = async function (
 
     console.log(`Sliding into ${voiceChannel.name} ..., last`, process.hrtime(start));
 
-    voiceChannel
-      .join()
-      .then((conn) => {
-        console.log('inside conn, last', process.hrtime(start));
-        const deltaStart = Date.now();
-        const dispatcher = conn.play(__dirname + '/../sounds/taterubot-start-recording.mp3');
-        console.log('after dispatcher, last', process.hrtime(start));
-        dispatcher.on('finish', () => {
-          console.log(`Joined ${voiceChannel.name}!\n\nREADY TO RECORD\n`);
-        });
+    try {
+      const conn = await voiceChannel.join();
+
+      console.log('inside conn, last', process.hrtime(start));
+      const deltaStart = Date.now();
+      const dispatcher = conn.play(__dirname + '/../sounds/taterubot-start-recording.mp3');
+      console.log('after dispatcher, last', process.hrtime(start));
+
+      let botListening = false;
+      dispatcher.on('finish', () => {
+        console.log(`Joined ${voiceChannel.name}!\n\nREADY TO RECORD\n`);
+        botListening = true;
+
         voiceSessionMap[voiceChannel.id] = {
           voiceSid: voiceSid,
           activityLog: [],
@@ -63,15 +65,18 @@ export const enter = async function (
         const receiver = conn.receiver;
 
         conn.on('speaking', (user, speaking) => {
+          if (!botListening) {
+            return;
+          }
           if (speaking) {
             const delta = Date.now() - deltaStart;
             /*
-                        e: EventType
-                            "s": Speak start
-                            "e": Speak end
-                        s: Username
-                        d: Delta from 
-                    */
+                            e: EventType
+                                "s": Speak start
+                                "e": Speak end
+                            s: Username
+                            d: Delta from 
+                        */
             voiceSessionMap[voiceChannel.id].activityLog.push({
               e: 's',
               s: user.username,
@@ -91,11 +96,11 @@ export const enter = async function (
             });
           }
         });
-      })
-      .catch((err) => {
-        console.log(err);
-        console.warn('Failure connecting to guild');
       });
+    } catch (err) {
+      console.log(err);
+      console.warn('Failure connecting to guild');
+    }
   } else {
     console.log('An active recording session exists in the current guild.');
   }
