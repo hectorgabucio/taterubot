@@ -78,7 +78,7 @@ export const enter = async function (
         const audioStream = receiver.createStream(user, { mode: 'pcm' });
         audioStream.pipe(createNewChunk(voiceSid));
 
-        audioStream.on('end', () => {
+        audioStream.on('end', () => { 
           const deltaEnd = Date.now() - deltaStart;
           console.log(`${user.username} stopped speaking`);
           voiceSessionMap[voiceChannel.id].activityLog.push({
