@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 require('dotenv').config();
 import Discord, { TextChannel } from 'discord.js';
 import { enter, exit } from './commands';

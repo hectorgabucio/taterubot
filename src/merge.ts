@@ -26,7 +26,7 @@ async function concatenate(files: string[], basePath: string) {
 }
 
 function doFfmpegTask(recId: string): Promise<void> {
-  return new Promise((resolve, _) => {
+  return new Promise((resolve) => {
     const command = ffmpeg()
       .input(`${__dirname}/../recordings/${recId}/merged.pcm`)
       .inputOptions('-f', 's16le', '-ar', '48000', '-ac', '2')
