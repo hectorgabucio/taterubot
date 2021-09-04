@@ -1,14 +1,13 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require('dotenv').config();
-import Discord, { TextChannel } from 'discord.js';
+import Discord, { TextChannel, VoiceState } from 'discord.js';
 import { enter, exit } from './commands';
 const client = new Discord.Client();
 
-const POOL = 2;
+const POOL = 1;
 const CHANNEL_PREFIX = 'TATERU-';
 
 const MAP: Record<string, Discord.GuildChannel[]> = {};
-
 
 const activeGuildRecorders: Record<string, boolean> = {};
 
@@ -37,6 +36,10 @@ client.on('ready', async () => {
 });
 
 client.on('voiceStateUpdate', async (oldMember, newMember) => {
+  await handleVoiceChangeState(oldMember, newMember);
+});
+
+async function handleVoiceChangeState(oldMember: VoiceState, newMember: VoiceState) {
   if (oldMember?.member?.user?.bot || newMember?.member?.user?.bot) {
     return;
   }
@@ -48,29 +51,35 @@ client.on('voiceStateUpdate', async (oldMember, newMember) => {
     return;
   }
 
-  const guildNew = newMember.guild.id;
-  const guildObj = newMember.guild;
-
-  console.log(oldMember.channelID, newMember.channelID);
-
-  const newUserChannel = newMember.channelID;
-  const oldUserChannel = oldMember.channelID;
-
-  if (!oldUserChannel && newUserChannel) {
-    // User Joins a voice channel
-    if (newMember?.channel?.name.startsWith(CHANNEL_PREFIX) && !activeGuildRecorders[guildNew]) {
-      activeGuildRecorders[guildNew] = true;
-      await enter(guildNew, newMember?.member?.user?.username ?? 'pepoclown', newMember.channel);
-    }
-  } else if (!newUserChannel) {
-    // User leaves a voice channel
-    if (oldMember?.channel?.name.startsWith(CHANNEL_PREFIX)) {
-      const channel = guildObj.channels.cache.find((x) => x.type === 'text');
-
-      activeGuildRecorders[oldMember.guild.id] = false;
-      guildObj.voice && channel && (await exit(guildObj.voice, channel as TextChannel));
-    }
-  } else {
-    // user switches to/from tateru channel
+  const guildId = oldMember?.guild?.id ?? newMember?.guild?.id ?? null;
+  if (!guildId) {
+    console.log('no guild id detected...');
+    return;
   }
-});
+
+  if (activeGuildRecorders[guildId]) {
+    //if there was activity while a recording in guild, stop recording
+    const guildObj = oldMember?.guild ?? newMember?.guild;
+    if (!guildObj || !guildObj.voice) {
+      console.log('no guild obj or voice found...');
+      return;
+    }
+    const channel = guildObj.channels.cache.find((x) => x.type === 'text');
+    await exit(guildObj.voice, channel as TextChannel);
+    activeGuildRecorders[guildId] = false;
+  } else {
+    console.log('new user entered!!!');
+    //if any activity and no recording lock, recording allowed
+    const username = newMember?.member?.user?.username;
+    if (!username) {
+      console.log('no username found...');
+      return;
+    }
+    if (!newMember.channel) {
+      console.log('no channel found to start recording...');
+      return;
+    }
+    activeGuildRecorders[guildId] = true;
+    await enter(guildId, username, newMember.channel);
+  }
+}

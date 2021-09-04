@@ -15,7 +15,7 @@
   "author": "Hector Gabucio",
   "license": "MIT",
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=16.0.0"
   },
   "dependencies": {
     "@discordjs/opus": "^0.3.2",

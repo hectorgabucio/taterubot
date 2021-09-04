@@ -62,23 +62,16 @@ export const enter = async function (
     conn.on('speaking', (user, speaking) => {
       if (speaking) {
         const delta = Date.now() - deltaStart;
-        /*
-                            e: EventType
-                                "s": Speak start
-                                "e": Speak end
-                            s: Username
-                            d: Delta from 
-                        */
         voiceSessionMap[voiceChannel.id].activityLog.push({
           e: 's',
           s: user.username,
           d: delta,
-        }); 
+        });
         console.log(`${user.username} started speaking`);
         const audioStream = receiver.createStream(user, { mode: 'pcm' });
         audioStream.pipe(createNewChunk(voiceSid));
 
-        audioStream.on('end', () => { 
+        audioStream.on('end', () => {
           const deltaEnd = Date.now() - deltaStart;
           console.log(`${user.username} stopped speaking`);
           voiceSessionMap[voiceChannel.id].activityLog.push({
@@ -95,8 +88,6 @@ export const enter = async function (
   }
 };
 export const exit = async function (voice: VoiceState, channel: TextChannel): Promise<void> {
-  // Use optional chaining when we upgrade to Node 14.
-
   const { channel: voiceChannel, connection: conn } = voice;
   if (!voiceChannel || !conn) {
     throw new Error('wtf no voice channel or conn');
@@ -106,12 +97,17 @@ export const exit = async function (voice: VoiceState, channel: TextChannel): Pr
   const data = JSON.stringify(voiceSessionMap[voiceChannel.id]);
   await writeF(__dirname + `/../recordings/${resolveSessionId}.json`, data, 'utf8');
 
-  await processRecording(resolveSessionId);
-  const path = `./recordings/${resolveSessionId}/${resolveSessionId}.mp3`;
-  await channel.send({
-    files: [path],
-  });
-  fs.rm(`./recordings/${resolveSessionId}`, { recursive: true, force: true }, () => ({}));
+  const isAudioRecorded = await processRecording(resolveSessionId);
+  if (!isAudioRecorded) {
+    await channel.send({ content: 'Sorry, could not record audio, please try again' });
+  } else {
+    const path = `./recordings/${resolveSessionId}/${resolveSessionId}.mp3`;
+    await channel.send({
+      files: [path],
+    });
+    fs.rm(`./recordings/${resolveSessionId}`, { recursive: true, force: true }, () => ({}));
+    fs.rm(`./recordings/${resolveSessionId}.json`, { recursive: false, force: true }, () => ({}));
+  }
 
   delete voiceSessionMap[voiceChannel.id];
   voiceChannel.leave();

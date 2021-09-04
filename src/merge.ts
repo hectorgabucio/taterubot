@@ -6,15 +6,19 @@ const readF = promisify(readFile);
 const readDir = promisify(readdir);
 const writeF = promisify(writeFile);
 
-export async function processRecording(recId: string):Promise<void> {
+export async function processRecording(recId: string):Promise<boolean> {
   const inputPCM = __dirname + '/../recordings/' + recId + '/'
   const chunks = await readDir(inputPCM);
+  if (chunks.length === 0) {
+    return false
+  }
   chunks.sort((a, b) => {
     return a.localeCompare(b);
   });
   const buffer = await concatenate(chunks, inputPCM);
   await writeF(__dirname + `/../recordings/${recId}/merged.pcm`, buffer);
-  return await doFfmpegTask(recId);
+  await doFfmpegTask(recId);
+  return true
 }
 
 async function concatenate(files: string[], basePath: string) {
