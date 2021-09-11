@@ -2,6 +2,7 @@
 require('dotenv').config();
 import Discord, { TextChannel, VoiceState } from 'discord.js';
 import { enter, exit } from './commands';
+import logger from './logger';
 const client = new Discord.Client();
 
 const POOL = 1;
@@ -18,7 +19,7 @@ if (!process.env.BOT_TOKEN) {
 client.login(process.env.BOT_TOKEN);
 
 client.on('ready', async () => {
-  console.log(`\nONLINE\n`);
+  logger.info(`ONLINE`);
   for (const guild of client.guilds.cache) {
     const tateChannels = guild[1].channels.cache
       .array()
@@ -53,7 +54,7 @@ async function handleVoiceChangeState(oldMember: VoiceState, newMember: VoiceSta
 
   const guildId = oldMember?.guild?.id ?? newMember?.guild?.id ?? null;
   if (!guildId) {
-    console.log('no guild id detected...');
+    logger.warn('no guild id detected...');
     return;
   }
 
@@ -61,22 +62,21 @@ async function handleVoiceChangeState(oldMember: VoiceState, newMember: VoiceSta
     //if there was activity while a recording in guild, stop recording
     const guildObj = oldMember?.guild ?? newMember?.guild;
     if (!guildObj || !guildObj.voice) {
-      console.log('no guild obj or voice found...');
+      logger.warn('no guild obj or voice found...');
       return;
     }
     const channel = guildObj.channels.cache.find((x) => x.type === 'text');
     await exit(guildObj.voice, channel as TextChannel);
     activeGuildRecorders[guildId] = false;
   } else {
-    console.log('new user entered!!!');
     //if any activity and no recording lock, recording allowed
     const username = newMember?.member?.user?.username;
     if (!username) {
-      console.log('no username found...');
+      logger.warn('no username found...');
       return;
     }
     if (!newMember.channel) {
-      console.log('no channel found to start recording...');
+      logger.warn('no channel found to start recording...');
       return;
     }
     activeGuildRecorders[guildId] = true;

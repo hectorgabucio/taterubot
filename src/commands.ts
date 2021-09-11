@@ -2,6 +2,7 @@ import { TextChannel, VoiceChannel, VoiceState } from 'discord.js';
 import fs, { writeFile } from 'fs';
 import pEvent from 'p-event';
 import { promisify } from 'util';
+import logger from './logger';
 import { processRecording } from './merge';
 
 const writeF = promisify(writeFile);
@@ -29,8 +30,6 @@ export const enter = async function (
   authorName: string,
   voiceChannel: VoiceChannel,
 ): Promise<void> {
-  const start = process.hrtime();
-
   const currentGuildId = guildId;
 
   const voiceSid = authorName + '-' + new Date().toISOString();
@@ -40,13 +39,12 @@ export const enter = async function (
   try {
     const conn = await voiceChannel.join();
 
-    console.log('inside conn, last', process.hrtime(start));
     const deltaStart = Date.now();
     const dispatcher = conn.play(__dirname + '/../sounds/taterubot-start-recording.mp3');
 
     await pEvent(dispatcher, 'finish');
 
-    console.log(`Joined ${voiceChannel.name}!\n\nREADY TO RECORD\n`);
+    logger.info(`Joined ${voiceChannel.name}!`);
 
     voiceSessionMap[voiceChannel.id] = {
       voiceSid: voiceSid,
@@ -67,13 +65,13 @@ export const enter = async function (
           s: user.username,
           d: delta,
         });
-        console.log(`${user.username} started speaking`);
+        logger.info(`${user.username} started speaking`);
         const audioStream = receiver.createStream(user, { mode: 'pcm' });
         audioStream.pipe(createNewChunk(voiceSid));
 
         audioStream.on('end', () => {
           const deltaEnd = Date.now() - deltaStart;
-          console.log(`${user.username} stopped speaking`);
+          logger.info(`${user.username} stopped speaking`);
           voiceSessionMap[voiceChannel.id].activityLog.push({
             e: 'e',
             s: user.username,
@@ -83,8 +81,8 @@ export const enter = async function (
       }
     });
   } catch (err) {
-    console.log(err);
-    console.warn('Failure connecting to guild');
+    logger.warn('Failure connecting to guild');
+    logger.error(err);
   }
 };
 export const exit = async function (voice: VoiceState, channel: TextChannel): Promise<void> {
@@ -111,5 +109,5 @@ export const exit = async function (voice: VoiceState, channel: TextChannel): Pr
 
   delete voiceSessionMap[voiceChannel.id];
   voiceChannel.leave();
-  console.log(`\nSTOPPED RECORDING\n`);
+  logger.info(`STOPPED RECORDING`);
 };
