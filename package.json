@@ -19,14 +19,18 @@
   },
   "dependencies": {
     "@discordjs/opus": "^0.3.2",
+    "bufferutil": "^4.0.3",
     "discord-buttons": "^4.0.0",
-    "discord.js": "^12.3.1",
+    "discord.js": "^12.5.3",
     "dotenv": "^10.0.0",
     "fluent-ffmpeg": "^2.1.2",
     "p-event": "^4.2.0",
     "pino": "^7.0.0-rc.4",
     "reflect-metadata": "^0.1.13",
-    "tsyringe": "^4.6.0"
+    "sodium": "^3.0.2",
+    "tsyringe": "^4.6.0",
+    "utf-8-validate": "^5.0.5",
+    "zlib-sync": "^0.1.7"
   },
   "devDependencies": {
     "@types/fluent-ffmpeg": "^2.1.18",
