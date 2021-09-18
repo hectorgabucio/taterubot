@@ -23,7 +23,9 @@
     "dotenv": "^10.0.0",
     "fluent-ffmpeg": "^2.1.2",
     "p-event": "^4.2.0",
-    "pino": "^7.0.0-rc.4"
+    "pino": "^7.0.0-rc.4",
+    "reflect-metadata": "^0.1.13",
+    "tsyringe": "^4.6.0"
   },
   "devDependencies": {
     "@types/fluent-ffmpeg": "^2.1.18",

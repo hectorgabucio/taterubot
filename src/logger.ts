@@ -1,4 +1,3 @@
-import log from 'pino'
+import pino from 'pino';
 
-const logger = log()
-export default logger
+export const myLogger = pino();
