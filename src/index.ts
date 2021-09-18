@@ -11,6 +11,7 @@ container.register('recordingsPath', { useValue: __dirname + '/../recordings' })
 container.register('soundsPath', { useValue: __dirname + '/../sounds' });
 
 import Discord, { Client } from 'discord.js';
+import disbut from 'discord-buttons';
 import { InitHandler } from './handlers/initHandler';
 import { VoiceUpdateHandler } from './handlers/voiceUpdateHandler';
 
@@ -23,6 +24,7 @@ class EntryPoint {
   private client: Client;
   constructor(private initHandler: InitHandler, private voiceUpdateHandler: VoiceUpdateHandler) {
     this.client = new Discord.Client();
+    disbut(this.client);
   }
 
   public async start() {

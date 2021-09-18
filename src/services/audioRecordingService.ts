@@ -1,9 +1,10 @@
+import { MessageActionRow, MessageButton } from 'discord-buttons';
 import { TextChannel, VoiceChannel, VoiceState } from 'discord.js';
+import fs, { writeFile } from 'fs';
 import pEvent from 'p-event';
+import pino from 'pino';
 import { inject, singleton } from 'tsyringe';
 import { promisify } from 'util';
-import fs, { writeFile } from 'fs';
-import pino from 'pino';
 import { AudioMergeService } from './audioMergeService';
 
 const mkdir = promisify(fs.mkdir);
@@ -27,7 +28,7 @@ export class AudioRecordingService {
     @inject('logger') private logger: pino.Logger,
     @inject('soundsPath') private soundsPath: string,
     @inject('recordingsPath') private recordingsPath: string,
-    private audioMerge: AudioMergeService
+    private audioMerge: AudioMergeService,
   ) {}
 
   async enter(guildId: string | number, authorName: string, voiceChannel: VoiceChannel): Promise<void> {
@@ -103,9 +104,13 @@ export class AudioRecordingService {
       await channel.send({ content: 'Sorry, could not record audio, please try again' });
     } else {
       const path = `${this.recordingsPath}/${resolveSessionId}/${resolveSessionId}.mp3`;
-      await channel.send({
-        files: [path],
-      });
+      const button1 = new MessageButton().setStyle('red').setLabel('My First Button!').setID('button1').setDisabled();
+
+      const button2 = new MessageButton().setStyle('blurple').setLabel('La veraaaa').setID('button2').setDisabled();
+
+      const row1 = new MessageActionRow().addComponents(button1, button2);
+
+      await channel.send('', { components: [row1], files: [path] });
       fs.rm(`${this.recordingsPath}/${resolveSessionId}`, { recursive: true, force: true }, () => ({}));
       fs.rm(`${this.recordingsPath}/${resolveSessionId}.json`, { recursive: false, force: true }, () => ({}));
     }
