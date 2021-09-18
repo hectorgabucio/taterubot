@@ -4,7 +4,7 @@ import { inject, singleton } from 'tsyringe';
 import { promisify } from 'util';
 import fs, { writeFile } from 'fs';
 import pino from 'pino';
-import { processRecording } from '../merge';
+import { AudioMergeService } from './audioMergeService';
 
 const mkdir = promisify(fs.mkdir);
 const writeF = promisify(writeFile);
@@ -27,6 +27,7 @@ export class AudioRecordingService {
     @inject('logger') private logger: pino.Logger,
     @inject('soundsPath') private soundsPath: string,
     @inject('recordingsPath') private recordingsPath: string,
+    private audioMerge: AudioMergeService
   ) {}
 
   async enter(guildId: string | number, authorName: string, voiceChannel: VoiceChannel): Promise<void> {
@@ -97,7 +98,7 @@ export class AudioRecordingService {
     const pathFile = `${this.recordingsPath}/${resolveSessionId}.json`;
     await writeF(pathFile, data, 'utf8');
 
-    const isAudioRecorded = await processRecording(resolveSessionId);
+    const isAudioRecorded = await this.audioMerge.processRecording(resolveSessionId);
     if (!isAudioRecorded) {
       await channel.send({ content: 'Sorry, could not record audio, please try again' });
     } else {
